@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]  # Run on pushes to main branch (default)
+  pull_request:
+    branches: [ main ]  # Run on PRs targeting main branch (default)
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install django openai python-dotenv
+        
+    - name: Run Django checks
+      run: |
+        python manage.py check
+        
+    - name: Run tests
+      run: |
+        python manage.py test

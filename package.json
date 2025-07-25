@@ -1,0 +1,22 @@
+{
+  "name": "rest-and-revise",
+  "version": "1.0.0",
+  "description": "Django REST API for text summarization",
+  "main": "manage.py",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jayanthk82/rest-and-revise.git"
+  },
+  "homepage": "https://github.com/jayanthk82/rest-and-revise#readme",
+  "bugs": {
+    "url": "https://github.com/jayanthk82/rest-and-revise/issues"
+  },
+  "keywords": [
+    "django",
+    "rest-api",
+    "ai",
+    "summarization"
+  ],
+  "author": "jayanthk82",
+  "license": "MIT"
+}
