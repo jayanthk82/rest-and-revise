@@ -6,6 +6,7 @@ import json
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+from .models import Summary
 load_dotenv()
 @csrf_exempt # This decorator allows tools like Postman to send POST requests
 def summarize_view(request):
@@ -27,6 +28,11 @@ def summarize_view(request):
         summary_text = api_call(text_to_summarize)
         word_count_original = len(text_to_summarize.split())
         word_count_summary = len(summary_text.split())
+        
+        Summary.objects.create(
+            original_text=text_to_summarize,
+            summary_text=summary_text
+        )
 
         # Send back a successful response that matches our API Contract
         return JsonResponse({
