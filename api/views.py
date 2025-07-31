@@ -71,8 +71,8 @@ def api_call(content):
 
 
 
-# Add this new function to api/views.py
 
+# Add this new function to api/views.py
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def my_summaries_view(request):

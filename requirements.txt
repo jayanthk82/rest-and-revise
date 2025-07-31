@@ -3,6 +3,7 @@ anyio==4.9.0
 asgiref==3.9.1
 certifi==2025.7.14
 distro==1.9.0
+dj-database-url==3.0.1
 Django==5.2.4
 django-cors-headers==4.7.0
 djangorestframework==3.16.0
@@ -14,6 +15,7 @@ idna==3.10
 jiter==0.10.0
 openai==1.97.1
 packaging==25.0
+psycopg2-binary==2.9.10
 pydantic==2.11.7
 pydantic_core==2.33.2
 python-dotenv==1.1.1
