@@ -39,9 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',  # Custom app for API endpoints
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders' ,
+
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # Add this line
+    'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -127,3 +133,5 @@ ALLOWED_HOSTS = []
 RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# Allow all origins for now. We can restrict this later.
+CORS_ALLOW_ALL_ORIGINS = True
