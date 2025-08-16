@@ -17,7 +17,6 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -28,7 +27,6 @@ SECRET_KEY = 'django-insecure-7-0e*+ljzon31oophx5i!lr98hy6_bisi$scz9-&tbw3*+2+(b
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -137,3 +135,15 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 # Allow all origins for now. We can restrict this later.
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379//')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/')
+# EMAIL SETTINGS (for Brevo)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.brevo.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('BREVO_LOGIN_EMAIL') # Your Brevo login email
+EMAIL_HOST_PASSWORD = os.getenv('BREVO_API_KEY') # Your Brevo API Key
