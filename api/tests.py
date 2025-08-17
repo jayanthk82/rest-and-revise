@@ -1,4 +1,3 @@
-
 # ------------------
 # brevo transactional emailing\
 # ------------------
@@ -36,7 +35,3 @@ except ApiException as e:
 def send_mail():
     exec(code,globals())
 send_mail()
-
-
-
-
