@@ -136,14 +136,8 @@ if RENDER_EXTERNAL_HOSTNAME:
 # Allow all origins for now. We can restrict this later.
 CORS_ALLOW_ALL_ORIGINS = True
 
-
 # CELERY SETTINGS
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379//')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/')
-# EMAIL SETTINGS (for Brevo)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp-relay.brevo.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('BREVO_LOGIN_EMAIL') # Your Brevo login email
-EMAIL_HOST_PASSWORD = os.getenv('BREVO_API_KEY') # Your Brevo API Key
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+
+
