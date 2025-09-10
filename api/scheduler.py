@@ -70,8 +70,9 @@ class NewsletterScheduler:
                     heapq.heappop(heap)
                     heapq.heappush(heap, [score,log])
 
-            except log.DoesNotExist:
+            except (TypeError, KeyError, ValueError) as e:
                 # If a log exists but a solution doesn't, just skip it.
+                print(f"Could not calculate score for a log item for user {self.user.username}: {e}")
                 continue
         return heap
 

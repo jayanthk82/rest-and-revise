@@ -1,70 +1,72 @@
 from celery import shared_task
-import time
-
-@shared_task
-def add(x, y):
-    time.sleep(5)  # simulate long task
-    return x + y
-
-
-'''
-from celery import shared_task
-from .models import User, Problems
+from datetime import datetime
 from .scheduler import NewsletterScheduler
-from .email_utils import send_newsletter_email  #Need to setup emailservice  
+from django.contrib.auth.models import User
+import time
+import redis
 from django.conf import settings
-import redis # 1. Import the redis library
-import json  # 2. Import json to handle data formatting
+import os
 
-# 3. Create a Redis client instance
-# This connects to the same Redis server your Celery broker uses.
-redis_client = redis.from_url(settings.CELERY_BROKER_URL)
+# Initialize a connection to your Redis server.
+redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
+redis_url = f"redis://{redis_host}:6379/0"
+redis_client = redis.from_url(redis_url, decode_responses=True)
 
+
+# --- Morning Newsletter Task (Refined Version) ---
 @shared_task
-def select_daily_topics_for_all_users():
+def generate_newsletter():
     """
-    TASK 1: Runs every night. For each user, it calculates their topics
-    and saves the list of IDs directly to Redis.
+    Scheduled to run every morning.
+    Generates personalized newsletter content for each active user
+    and caches it in Redis for fast retrieval.
     """
-    print("CELERY BEAT: Starting nightly topic selection for all users...")
-    all_users = User.objects.filter(is_active=True)
-    for user in all_users:
-        scheduler = NewsletterScheduler(user)
-        newsletter_content = scheduler.generate_newsletter_content()
+    print(f"--- Running Morning Newsletter Generation at {datetime.now().strftime('%Y-%m-%d %H:%M')} ---")
+    try:
+        # 1. Get all *active* users to avoid processing disabled accounts.
+        all_users = User.objects.filter(is_active=True)
 
-        if newsletter_content:
-            
-            # 4. Store the topic IDs in Redis as a JSON string
-            # The key is unique for each user. It expires in 12 hours.
-            redis_client.set(
-                f'newsletter_topics_{user.id}',
-                json.dumps(topic_ids),
-                ex=60*60*12
-            )
-            print(f"Selected topics for {user.username}: {topic_ids}")
+        if not all_users.exists():
+            print("No active users found. Task finished.")
+            return "No active users to process."
 
-    return "Nightly topic selection complete."
+        # 2. Loop through each active user.
+        for user in all_users:
+            try:
+                scheduler = NewsletterScheduler(user)
+                content = scheduler.generate_newsletter_content()
 
+                # 3. Use smarter logic to decide whether to cache the content.
+                if content and "No topics due for review today!" not in content:
+                    redis_key = f'newsletter_content_{user.id}'
+                    redis_client.set(redis_key, content, ex=86400) # Expire after 24 hours
+                    print(f"✅ Successfully generated and cached newsletter for user: {user.username}")
+                else:
+                    print(f"ℹ️ No topics for user: {user.username}. Nothing to cache.")
+
+            except Exception as e:
+                # This inner try-except ensures that one user's failure
+                # doesn't stop the entire process.
+                print(f"❌ Failed to process newsletter for {user.username}: {e}")
+
+        # 4. Use the `all_users` variable we defined earlier.
+        return f"Newsletter generation and caching complete for {all_users.count()} users."
+
+    except Exception as e:
+        print(f"A critical error occurred in the main task: {e}")
+        return "Task failed due to a critical error."
+
+# --- Gentle Evening Reminder Task ---
+# Adding this back as it aligns with your goal for daily relaxed moments.
 @shared_task
-def send_daily_newsletter_for_all_users():
+def periodic_reminder():
     """
-    TASK 2: Runs every morning. For each user, it fetches their
-    pre-selected topics directly from Redis and sends the email.
+    A gentle, scheduled reminder to pause and relax.
     """
-    print("CELERY BEAT: Starting morning newsletter dispatch...")
-    all_users = User.objects.filter(is_active=True)
-    for user in all_users:
-        # 5. Fetch the list of topic IDs directly from Redis
-        topic_ids_json = redis_client.get(f'newsletter_topics_{user.id}')
-        
-        if topic_ids_json:
-            # 6. Convert the JSON string back into a Python list
-            topic_ids = json.loads(topic_ids_json)
-            
-            topics = Problem.objects.filter(id__in=topic_ids)
-            send_newsletter_email(user, topics)
-            
-            # 7. Clean up the key from Redis after sending
-            redis_client.delete(f'newsletter_topics_{user.id}')
-            
-    return "Morning newsletter dispatch complete."'''
+    current_time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print("\n---------------------------------")
+    print(f"--- It's {current_time_str} ---")
+    print("This is your scheduled reminder to take a deep breath and relax for a moment. You're doing great!")
+    print("---------------------------------\n")
+    return "Reminder sent successfully."
+

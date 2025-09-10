@@ -10,6 +10,8 @@ from .models import Problems,User
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token # 1. Import the Token model
+
 load_dotenv()
 
 '''Use this function to make a query for a LLM(You also add base64 url for images to get response based on the images)'''
@@ -108,7 +110,7 @@ def get_user_log(request_user):
     try:
         # 1. Get all summaries belonging to the currently authenticated user
         #    and order them by the newest first.
-        problems = Problems.objects.filter(user=request_user)
+        problems = Problems.objects.filter(token=request_user)
         # 2. Prepare the data to be sent back as JSON.
         #    We manually create a list of dictionaries.
         results = [
@@ -124,7 +126,7 @@ def get_user_log(request_user):
         ]
 
         # 3. Send the list back as a response.
-        return results
+        return Response(results)
     except Exception as e:
         return f"error {e}"
  
@@ -135,12 +137,13 @@ def get_user_log(request_user):
 def sign_up(request):
     info = json.loads(request.body)
     try: 
-        User.objects.create_superuser(
+        user = User.objects.create_superuser(
             username = info["username"],
             email = info["email"],
             password = info["password"],
             is_active = True,
         )
-        return Response(f"{info["username"]} created")
+        token = Token.objects.create(user = user)
+        return Response(f"{info["username"]} created\n token: {token}")
     except Exception as e:
         return Response({"error": f"An error occurred: {str(e)}"}, status=500)
