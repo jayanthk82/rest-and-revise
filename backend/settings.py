@@ -165,7 +165,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "send-mail-every-morning": {
         "task": "api.tasks.mailing",
-        "schedule": 10,
+        "schedule": 1,
         #"schedule": crontab(hour=8, minute=0),  # every day at 8 AM
     },
 }

@@ -9,6 +9,7 @@ import os
 from celery.result import AsyncResult
 from .email_utils import do_mail
 
+from django.http import JsonResponse
 
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
@@ -35,7 +36,7 @@ def generate_newsletter():
 
         if not all_users.exists():
             print("No active users found. Task finished.")
-            return "No active users to process."
+            return {"message":"No active users to process."}
 
         # 2. Loop through each active user.
         for user in all_users:
@@ -59,34 +60,34 @@ def generate_newsletter():
                 print(f"❌ Failed to process newsletter for {user.username}: {e}")
 
         # 4. Use the `all_users` variable we defined earlier.
-        return f"Newsletter generation and caching complete for {all_users.count()} users."
+        return {"message":"Newsletter generation and caching complete for users."}
 
     except Exception as e:
         print(f"A critical error occurred in the main task: {e}")
-        return "Task failed due to a critical error."
+        return {"message":"Task failed due to a critical error."}
 
 # --- Gentle Evening Reminder Task ---
 # Adding this back as it aligns with your goal for daily relaxed moments.
-@shared_task        #This decorator allows tools like Postman to send POST requests
+@shared_task
 def mailing():
     try:
         all_users = User.objects.filter(is_active=True)
         if not all_users.exists():
             print("No active users found. Task finished.")
-            return "No active users to process."
 
         for user in all_users:
             redis_key = f"newsletter_content_{user.id}"
             data = redis_client.get(redis_key)
             if data:
+                print(type(data))
                 payload = json.loads(data)
                 do_mail(payload["content"], payload["email"])
                 print('mailsent')
             else:
                 print(f"No newsletter found for user {user.id}")
-                
-        return Response("Mail sending finished.")
-                    
+
+        return {"message": "Mail sending finished"}  # ✅ return dict
+
     except Exception as e:
         print(f"Error in send_mail: {e}")
-        return Response(str(e))
+        return {"message":'error'}  # ✅ return plain string inside dict
