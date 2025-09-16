@@ -16,12 +16,14 @@ load_dotenv()
 
 '''Use this function to make a query for a LLM(You also add base64 url for images to get response based on the images)'''
 def LLM_API_CALL(query):
+    return query
+    '''
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.getenv('OPENROUTER_API_KEY')
     )
     completion = client.chat.completions.create(
-        model="meta-llama/llama-3.3-8b-instruct:free",
+        model="nvidia/nemotron-nano-9b-v2:free",
         messages=[
             {
                 "role": "user",
@@ -30,9 +32,9 @@ def LLM_API_CALL(query):
                 }
         ]
     )
-
     res = completion.choices[0].message.content
-    return res.strip()  # Ensure we return a clean string without extra spaces or newlines
+    return res.strip()  # Ensure we return a clean string without extra spaces or newlines'''
+    
 
 '''Use this function to upload new problem for revision. This funtion verifies where the user sending this requesting has an account or not. If yes proceeds and stores required info into the database'''
 @csrf_exempt        #This decorator allows tools like Postman to send POST requests
@@ -108,13 +110,10 @@ def my_data(request):
 #@permission_classes([IsAuthenticated])
 def get_user_log(request_user):
     try:
-        # 1. Get all summaries belonging to the currently authenticated user
-        #    and order them by the newest first.
-        problems = Problems.objects.filter(token=request_user)
-        # 2. Prepare the data to be sent back as JSON.
-        #    We manually create a list of dictionaries.
+        problems = Problems.objects.filter(user=request_user)
         results = [
             {
+                "id": problem.id,
                 "problem":problem.description,
                 "user_solution": problem.solution,
                 "ai_analysis_report":problem.ai_description,
@@ -124,12 +123,13 @@ def get_user_log(request_user):
             }
             for problem in problems
         ]
-
-        # 3. Send the list back as a response.
-        return Response(results)
+        return results
     except Exception as e:
-        return f"error {e}"
- 
+        # **THE FIX IS HERE**
+        # Instead of returning an error string, we return an empty list.
+        # This is safe for the scheduler to process.
+        print(f"Error fetching user log for {request_user.username}: {e}")
+        return []
     
 '''Use this function to create a new user by giving username,email-id and login password'''
 @csrf_exempt        #This decorator allows tools like Postman to send POST requests

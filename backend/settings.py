@@ -107,6 +107,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# --- EMAIL CONFIGURATION (for SendGrid) ---
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "jayanthkonanki82@gmail.com"
+EMAIL_HOST_PASSWORD = "rtnjwcemkotevdcx"  # not your Gmail login
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -137,6 +146,7 @@ if RENDER_EXTERNAL_HOSTNAME:
 # Allow all origins for now. We can restrict this later.
 CORS_ALLOW_ALL_ORIGINS = True
 
+
 # CELERY SETTINGS
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
@@ -144,6 +154,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 
 # CELERY BEAT SCHEDULE
@@ -151,6 +162,11 @@ CELERY_BEAT_SCHEDULE = {
     'generate-periodic-newletters-content': {
         'task': 'api.tasks.generate_newsletter',
         'schedule': 1 ,  # Run once every 24 hours
+    },
+    "send-mail-every-morning": {
+        "task": "api.tasks.mailing",
+        "schedule": 10,
+        #"schedule": crontab(hour=8, minute=0),  # every day at 8 AM
     },
 }
 

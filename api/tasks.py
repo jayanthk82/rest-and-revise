@@ -3,9 +3,16 @@ from datetime import datetime
 from .scheduler import NewsletterScheduler
 from django.contrib.auth.models import User
 import time
-import redis
+import redis,json
 from django.conf import settings
 import os
+from celery.result import AsyncResult
+from .email_utils import do_mail
+
+
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 # Initialize a connection to your Redis server.
 redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
@@ -35,11 +42,13 @@ def generate_newsletter():
             try:
                 scheduler = NewsletterScheduler(user)
                 content = scheduler.generate_newsletter_content()
-
+                
                 # 3. Use smarter logic to decide whether to cache the content.
                 if content and "No topics due for review today!" not in content:
                     redis_key = f'newsletter_content_{user.id}'
-                    redis_client.set(redis_key, content, ex=86400) # Expire after 24 hours
+                    data = {'email':user.email,"content":content}
+                    redis_client.set(redis_key, json.dumps(data), ex=86400) # Expire after 24 hours
+                    #print(content)
                     print(f"✅ Successfully generated and cached newsletter for user: {user.username}")
                 else:
                     print(f"ℹ️ No topics for user: {user.username}. Nothing to cache.")
@@ -58,15 +67,26 @@ def generate_newsletter():
 
 # --- Gentle Evening Reminder Task ---
 # Adding this back as it aligns with your goal for daily relaxed moments.
-@shared_task
-def periodic_reminder():
-    """
-    A gentle, scheduled reminder to pause and relax.
-    """
-    current_time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print("\n---------------------------------")
-    print(f"--- It's {current_time_str} ---")
-    print("This is your scheduled reminder to take a deep breath and relax for a moment. You're doing great!")
-    print("---------------------------------\n")
-    return "Reminder sent successfully."
+@shared_task        #This decorator allows tools like Postman to send POST requests
+def mailing():
+    try:
+        all_users = User.objects.filter(is_active=True)
+        if not all_users.exists():
+            print("No active users found. Task finished.")
+            return "No active users to process."
 
+        for user in all_users:
+            redis_key = f"newsletter_content_{user.id}"
+            data = redis_client.get(redis_key)
+            if data:
+                payload = json.loads(data)
+                do_mail(payload["content"], payload["email"])
+                print('mailsent')
+            else:
+                print(f"No newsletter found for user {user.id}")
+                
+        return Response("Mail sending finished.")
+                    
+    except Exception as e:
+        print(f"Error in send_mail: {e}")
+        return Response(str(e))
