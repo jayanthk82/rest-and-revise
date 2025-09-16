@@ -1,14 +1,21 @@
+import os,sys
+import django
+from django.core.mail import send_mail
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Step 1: Load Django settings
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
+django.setup()
 
-import resend
-
-resend.api_key = "re_aE59Yuhj_78eUxoXefPoQA6Kq9LjbUEW6"
-
-params: resend.Emails.SendParams = {
-  "from": "Acme <jayanthkonanki82@gmail.com>",
-  "to": ["jkonanki@gitam.in"],
-  "subject": "hello world",
-  "html": "<p>it works!</p>"
-}
-
-email = resend.Emails.send(params)
-print(email)
+# Step 2: Send test 
+def do_mail(Message,receiver):
+    try: 
+        send_mail(
+            subject="Hello from Django (File Test)",
+            message= Message,
+            from_email="jayanthkonanki82@gmail.com",
+            recipient_list=[receiver],
+            fail_silently=False,)
+        return 
+    except Exception as e:
+        print(e)
+        return 

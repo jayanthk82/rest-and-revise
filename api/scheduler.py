@@ -1,5 +1,4 @@
 # api/scheduler.py
-
 import math
 from datetime import date
 from .models import User, Problems
@@ -63,15 +62,14 @@ class NewsletterScheduler:
                 score = self._calculate_topic_score(log)
                 # Use a min-heap with a negated score to find the topics with the highest scores
                 if len(heap)<num_topics:
-                    heapq.heappush(heap, [score,log])
+                    heapq.heappush(heap, (score,log))
                     continue
-                top = heap[-1]
-                if top[0]<score:
-                    heapq.heappop(heap)
-                    heapq.heappush(heap, [score,log])
+                if heap[0][0]<score:
+                    heapq.heapreplace(heap, (score,log))
 
-            except log.DoesNotExist:
+            except (TypeError, KeyError, ValueError) as e:
                 # If a log exists but a solution doesn't, just skip it.
+                print(f"Could not calculate score for a log item for user {self.user.username}: {e}")
                 continue
         return heap
 
@@ -101,7 +99,7 @@ class NewsletterScheduler:
         #print(full_query)
         # to-do: Replace this with a real LLM call utility
         content = LLM_API_CALL(full_query)
-        
+        #content = 'This is wonderFull-Exactly working what you need'
         # For now, we'll return a placeholder
         return content
     
@@ -115,4 +113,6 @@ def NewsletterScheduler_request(request=None,user=None):
        obj = NewsletterScheduler(request.user)
     else:
        obj = NewsletterScheduler(user)
-    return Response(obj.generate_newsletter_content())
+    obj.generate_newsletter_content()
+    return Response("Great")
+    #return Response(obj.generate_newsletter_content())

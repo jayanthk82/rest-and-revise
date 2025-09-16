@@ -6,6 +6,7 @@ billiard==4.2.1
 brevo-python==1.2.0
 celery==5.5.3
 certifi==2025.7.14
+charset-normalizer==3.4.3
 click==8.2.2
 click-didyoumean==0.3.1
 click-plugins==1.1.1.2
@@ -18,6 +19,7 @@ django-celery-beat==2.8.1
 django-cors-headers==4.7.0
 django-timezone-field==7.1
 djangorestframework==3.16.0
+ecdsa==0.19.1
 gunicorn==23.0.0
 h11==0.16.0
 httpcore==1.0.9
@@ -25,6 +27,7 @@ httpx==0.28.1
 idna==3.10
 jiter==0.10.0
 kombu==5.5.4
+MarkupSafe==3.0.2
 openai==1.97.1
 packaging==25.0
 prompt_toolkit==3.0.51
@@ -34,7 +37,11 @@ pydantic_core==2.33.2
 python-crontab==3.3.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
+python-http-client==3.3.7
 redis==6.2.0
+requests==2.32.5
+resend==2.13.1
+sendgrid==6.12.4
 setuptools==80.9.0
 sib-api-v3-sdk==7.6.0
 six==1.17.0
@@ -47,3 +54,4 @@ tzdata==2025.2
 urllib3==2.5.0
 vine==5.1.0
 wcwidth==0.2.13
+Werkzeug==3.1.3

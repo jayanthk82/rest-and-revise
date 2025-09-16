@@ -11,3 +11,4 @@ venv/
 
 # Django
 db.sqlite3
+sendgrid.env
