@@ -8,9 +8,7 @@ from django.conf import settings
 import os
 from celery.result import AsyncResult
 from .email_utils import do_mail
-
 from django.http import JsonResponse
-
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -19,7 +17,6 @@ from rest_framework.response import Response
 redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
 redis_url = f"redis://{redis_host}:6379/0"
 redis_client = redis.from_url(redis_url, decode_responses=True)
-
 
 # --- Morning Newsletter Task (Refined Version) ---
 @shared_task

@@ -7,8 +7,11 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from .models import Problems,User
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes,authentication_classes
+from rest_framework.authentication import TokenAuthentication,BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
+
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token # 1. Import the Token model
 
@@ -93,7 +96,8 @@ def my_data(request):
                 "ai_analysis_report":problem.ai_description,
                 "created_at": problem.created_at,
                 "proficiency_rating" : problem.proficiency_rating,
-                'User_Note':problem.note
+                'User_Note':problem.note,
+                "newsletter_info":problem.recent_date
 
             }
             for problem in problems
@@ -103,14 +107,15 @@ def my_data(request):
         return Response(results)
 
     except Exception as e:
-        return Response({"error": f"An error occurred: {str(e)}"}, status=500)
+        return ResponIsAuthenticatedse({"error": f"An error occurred: {str(e)}"}, status=500)
 
 
 '''Use this view to get all the topics of an user to find the next day topics'''
-#@permission_classes([IsAuthenticated])
 def get_user_log(request_user):
+
     try:
         problems = Problems.objects.filter(user=request_user)
+        print(problems)
         results = [
             {
                 "id": problem.id,
@@ -134,16 +139,56 @@ def get_user_log(request_user):
 '''Use this function to create a new user by giving username,email-id and login password'''
 @csrf_exempt        #This decorator allows tools like Postman to send POST requests
 @api_view(['POST'])
+@permission_classes([AllowAny])  # This makes the view public and solves the error
 def sign_up(request):
     info = json.loads(request.body)
     try: 
-        user = User.objects.create_superuser(
+        user = User.objects.create_user(
             username = info["username"],
             email = info["email"],
             password = info["password"],
             is_active = True,
         )
-        token = Token.objects.create(user = user)
-        return Response(f"{info["username"]} created\n token: {token}")
+        user.save()
+        return Response(f"{info["username"]} created\n")
+        
     except Exception as e:
         return Response({"error": f"An error occurred: {str(e)}"}, status=500)
+    
+
+
+@csrf_exempt        #This decorator allows tools like Postman to send POST requests
+@api_view(['GET'])
+#@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def create_resume(request):
+    info = json.loads(request.body)
+    logs =None
+    token_key = (request.headers.get('Authorization').split('Token '))[1]
+    try:
+       token = Token.objects.get(key=token_key)
+       print(token.user)
+       logs = get_user_log(token.user)
+    except Exception as e:
+        print(str(e))
+    try:
+        '''Extract user skills using AN LLM'''
+        topics = []
+        count = 1
+        for log in logs:
+            topics.append(str(f'{count}:{log['ai_analysis_report']}'))
+            count+=1
+        topics = ' '.join(topics)
+        
+        query = f'Extract the skills that are suitable for the job {info['job_description']} from the following user knowing topics. User known topics {topics} '
+        skills = LLM_API_CALL(query)
+        '''Create resume for the above extracted skills'''
+        #print(skills)
+        print(skills)
+        query = f'Create ATS friendly resume with the following skills and job description. Skills: {skills}, job description; {info['job_description']}. Note follow the following instructions to tune proper resume. Instructions:f{info['instructions']}'
+        resume = LLM_API_CALL(query)
+        response = {"resume":resume}
+        return Response(response)
+    except Exception as e:
+        response = {'error':str(e)}
+        return Response(response)
