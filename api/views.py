@@ -1,5 +1,5 @@
 # api/views.py
-
+import requests
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -11,17 +11,21 @@ from rest_framework.decorators import api_view, permission_classes,authenticatio
 from rest_framework.authentication import TokenAuthentication,BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
-
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token # 1. Import the Token model
+from .job_api_utils import fetch_job_listings
+from django.http import HttpResponse
+from weasyprint import HTML
+from .gemini_utils import generate_resume_html # 1. Import our new Gemini function
+import base64
+
 
 load_dotenv()
 
 '''Use this function to make a query for a LLM(You also add base64 url for images to get response based on the images)'''
 def LLM_API_CALL(query):
     return query
-    '''
-    client = OpenAI(
+    '''client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.getenv('OPENROUTER_API_KEY')
     )
@@ -107,7 +111,7 @@ def my_data(request):
         return Response(results)
 
     except Exception as e:
-        return ResponIsAuthenticatedse({"error": f"An error occurred: {str(e)}"}, status=500)
+        return Response({"error": f"An error occurred: {str(e)}"}, status=500)
 
 
 '''Use this view to get all the topics of an user to find the next day topics'''
@@ -192,3 +196,124 @@ def create_resume(request):
     except Exception as e:
         response = {'error':str(e)}
         return Response(response)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def job_suggestions_view(request):
+    """
+    An endpoint to provide job suggestions based on multiple keywords.
+    """
+    # Create a list of skills or job titles
+    skills = ['writer']
+    
+    jobs = fetch_job_listings(search_terms=skills)
+    print(type(jobs[0]))
+    return Response(jobs)
+
+'''
+@csrf_exempt        #This decorator allows tools like Postman to send POST requests
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_resume_pdf_view(request):
+    """
+    An endpoint that takes user data and a job description,
+    generates a resume using the Gemini API, and returns it as a PDF.
+    """
+    try:
+        # 2. Get the data from the frontend's request body
+        user_data = request.data.get('userData')
+        job_description = request.data.get('jobDescription')
+
+        if not user_data or not job_description:
+            return Response({"error": "User data and job description are required."}, status=400)
+
+        # 3. Call our Gemini utility to get the resume as an HTML string
+        resume_html = generate_resume_html(user_data, job_description)
+
+        # 4. Use WeasyPrint to convert the HTML string into a PDF in memory
+        pdf_file = HTML(string=resume_html).write_pdf()
+
+        # 5. Return the PDF file directly as the HTTP response
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        # This header tells the browser to display the PDF inline
+        response['Content-Disposition'] = 'inline; filename="resume.pdf"'
+        
+        return response
+
+    except Exception as e:
+        print(f"An error occurred during PDF generation: {e}")
+        return Response({"error": "Failed to generate resume PDF."}, status=500)
+
+'''
+
+
+@csrf_exempt        #This decorator allows tools like Postman to send POST requests
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_resume_pdf_view(request):
+    """
+    An endpoint that takes user data and a job description,
+    generates a resume using the Gemini API, and returns it as a PDF.
+    """
+    user_data = request.data.get('userData')
+    job_description = request.data.get('jobDescription')
+    logs =None
+    token_key = (request.headers.get('Authorization').split('Token '))[1]
+    try:
+       token = Token.objects.get(key=token_key)
+       print(token.user)
+       logs = get_user_log(token.user)
+    except Exception as e:
+        print(str(e))
+    try:
+        '''Extract user skills using AN LLM'''
+        topics = []
+        count = 1
+        for log in logs:
+            topics.append(str(f'{count}:{log['ai_analysis_report']}'))
+            count+=1
+        topics = ' '.join(topics)
+        
+        query = f'Extract the skills that are suitable for the job {job_description} from the following user knowing topics. User known topics {topics} '
+        skills = LLM_API_CALL(query)
+        '''Create resume for the above extracted skills'''
+        #print(skills)
+        # 2. Get the data from the frontend's request body
+        #user_data +=skills
+
+        if not user_data or not job_description:
+            return Response({"error": "User data and job description are required."}, status=400)
+
+        # 3. Call our Gemini utility to get the resume as an HTML string
+        resume_html = generate_resume_html(user_data, job_description)
+
+        # 4. Use WeasyPrint to convert the HTML string into a PDF in memory
+        pdf_file = HTML(string=resume_html).write_pdf()
+        pdf_base64 = base64.b64encode(pdf_file).decode('utf-8')
+
+        # 2. Get the size of the PDF in bytes
+        pdf_size_bytes = len(pdf_file)
+
+        # 3. Build the exact JSON object Retool is expecting
+        retool_file_object = {
+            'name': 'generated_resume.pdf',
+            'type': 'application/pdf',
+            'sizeBytes': pdf_size_bytes,
+            'base64Data': pdf_base64
+        }
+        
+        # 4. Return this complete object as the JSON response
+        return JsonResponse(retool_file_object)
+        '''
+        # 5. Return the PDF file directly as the HTTP response
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        # This header tells the browser to display the PDF inline
+        response['Content-Disposition'] = 'inline; filename="resume.pdf"'
+        
+        return response'''
+
+    except Exception as e:
+        print(f"An error occurred during PDF generation: {e}")
+        return Response({"error": "Failed to generate resume PDF."}, status=500)

@@ -66,12 +66,11 @@ def generate_newsletter():
 # --- Gentle Evening Reminder Task ---
 # Adding this back as it aligns with your goal for daily relaxed moments.
 @shared_task
-def mailing():
+def newsletter_mailing():
     try:
         all_users = User.objects.filter(is_active=True)
         if not all_users.exists():
             print("No active users found. Task finished.")
-
         for user in all_users:
             redis_key = f"newsletter_content_{user.id}"
             data = redis_client.get(redis_key)

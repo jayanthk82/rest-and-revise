@@ -151,7 +151,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ['348b12982dd6.ngrok-free.app', 'localhost', '127.0.0.1','https://retool.com',"http://retool.com"]
+ALLOWED_HOSTS = ['5ecdd0be887a.ngrok-free.app', 'localhost', '127.0.0.1','https://retool.com',"http://retool.com"]
 RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -174,10 +174,10 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 1 ,  # Run once every 24 hours
     },
     "send-mail-every-morning": {
-        "task": "api.tasks.mailing",
+        "task": "api.tasks.newsletter_mailing",
         "schedule": 1,
         #"schedule": crontab(hour=8, minute=0),  # every day at 8 AM
-    },
+    }
 }
 
 
