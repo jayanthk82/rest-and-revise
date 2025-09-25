@@ -8,9 +8,7 @@ from django.conf import settings
 import os
 from celery.result import AsyncResult
 from .email_utils import do_mail
-
 from django.http import JsonResponse
-
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -19,7 +17,6 @@ from rest_framework.response import Response
 redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
 redis_url = f"redis://{redis_host}:6379/0"
 redis_client = redis.from_url(redis_url, decode_responses=True)
-
 
 # --- Morning Newsletter Task (Refined Version) ---
 @shared_task
@@ -69,12 +66,11 @@ def generate_newsletter():
 # --- Gentle Evening Reminder Task ---
 # Adding this back as it aligns with your goal for daily relaxed moments.
 @shared_task
-def mailing():
+def newsletter_mailing():
     try:
         all_users = User.objects.filter(is_active=True)
         if not all_users.exists():
             print("No active users found. Task finished.")
-
         for user in all_users:
             redis_key = f"newsletter_content_{user.id}"
             data = redis_client.get(redis_key)

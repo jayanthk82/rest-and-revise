@@ -17,7 +17,9 @@ class Problems(models.Model):
     note = models.TextField(null=True, blank=True)
     def __str__(self):
         return f"Newsletter log and solution for {Problems.title} by  at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
-        
+class skills(models.Model):
+    user = models.ForeignKey(User,on_delete = models.CASCADE)
+    user_skills = models.TextField()
 #Temporary changes on the newsletter logs future if any error with newsletterlogs use this code
 ##   user = models.ForeignKey(User,on_delete = models.CASCADE)
     #problem_id = models.ForeignKey(Problem, on_delete=models.CASCADE, null=True, blank=True)
